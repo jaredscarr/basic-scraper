@@ -61,6 +61,13 @@ def extract_data_listings(html):
     return html.find_all('div', id=id_finder)
 
 
+def has_two_tds(elem):
+    is_tr = elem.name == 'tr'
+    td_children = elem.find_all('td', recursive=False)
+    has_two = len(td_children) == 2
+    return is_tr and has_two
+
+
 if __name__ == '__main__':
     kwargs = {
         'Inspection_Start': '2/1/2013',
@@ -73,5 +80,8 @@ if __name__ == '__main__':
         html, encoding = get_inspection_page(**kwargs)
     doc = parse_source(html, encoding)
     listings = extract_data_listings(doc)
-    print(len(listings))
-    print(listings[0].prettify())
+    for listing in listings:  # <- add this stuff here.
+        metadata_rows = listing.find('tbody').find_all(
+            has_two_tds, recursive=False
+        )
+        print(len(metadata_rows))
