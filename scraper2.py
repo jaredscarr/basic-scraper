@@ -68,6 +68,14 @@ def has_two_tds(elem):
     return is_tr and has_two
 
 
+def clean_data(td):
+    data = td.string
+    try:
+        return data.strip(" \n:-")
+    except AttributeError:
+        return u""
+
+
 if __name__ == '__main__':
     kwargs = {
         'Inspection_Start': '2/1/2013',
@@ -86,7 +94,7 @@ if __name__ == '__main__':
         )
         for row in metadata_rows:
             for td in row.find_all('td', recursive=False):
-                print(td.text),
+                print(clean_data(td)),
             print
         print
 
