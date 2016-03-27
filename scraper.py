@@ -1,3 +1,4 @@
+import geocoder
 import io
 import re
 import requests
@@ -116,7 +117,7 @@ def extract_score_data(elem):
             total += intval
             high_score = intval if intval > high_score else high_score
     if samples:
-        average = total/float(samples)
+        average = total / float(samples)
     data = {
         u'Average Score': average,
         u'High Score': high_score,
@@ -125,7 +126,7 @@ def extract_score_data(elem):
     return data
 
 
-def generate_results(test=False):
+def generate_results(test=False, count=10):
     kwargs = {
         'Inspection_Start': '2/1/2013',
         'Inspection_End': '2/1/2015',
@@ -137,26 +138,24 @@ def generate_results(test=False):
         html, encoding = get_inspection_page(**kwargs)
     doc = parse_source(html, encoding)
     listings = extract_data_listings(doc)
-    for listing in listings:
+    for listing in listings[:count]:
         metadata = extract_restaurant_metadata(listing)
         score_data = extract_score_data(listing)
         metadata.update(score_data)
         yield metadata
 
 
+def get_geojson(result):
+    address = " ".join(result.get('Address', ''))
+    if not address:
+        return None
+    geocoded = geocoder.google(address)
+    return geocoded.geojson
+
+
 if __name__ == '__main__':
-    kwargs = {
-        'Inspection_Start': '2/1/2013',
-        'Inspection_End': '2/1/2015',
-        'Zip_Code': '98109'
-    }
-    if len(sys.argv) > 1 and sys.argv[1] == 'test':
-        html, encoding = load_inspection_page(TEST_HTML)
-    else:
-        html, encoding = get_inspection_page(**kwargs)
-    doc = parse_source(html, encoding)
-    listings = extract_data_listings(doc)
-    for listing in listings:
-        metadata = extract_restaurant_metadata(listing)
-        score_data = extract_score_data(listing)
-        print(score_data)
+    import pprint
+    test = len(sys.argv) > 1 and sys.argv[1] == 'test'
+    for result in generate_results(test):
+        geo_result = get_geojson(result)
+        pprint.pprint(geo_result)
